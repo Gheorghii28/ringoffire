@@ -1,0 +1,26 @@
+.player {
+    width: 300px;
+    display: flex;
+    align-items: center;
+    background-color: rgba(99, 96, 96, 0.7);
+    border-top-left-radius: 50px;
+    border-bottom-left-radius: 50px;
+    font-family: 'Comic Sans MS', arial, sans-serif;
+    font-weight: 600;
+
+    span {
+        font-size: 32px;
+        margin-left: 16px;
+    }
+
+    img {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 100%;
+    }
+}
+
+.player-active {
+    background-color: orange !important;
+}
