@@ -5,6 +5,7 @@ import { DialogAddPlayerComponent } from '../dialog-add-player/dialog-add-player
 import { Observable } from 'rxjs';
 import { Firestore, collectionData, collection, CollectionReference, DocumentData, doc, getDoc, updateDoc } from '@angular/fire/firestore';
 import { ActivatedRoute } from '@angular/router';
+import { EditPlayerComponent } from '../edit-player/edit-player.component';
 
 
 @Component({
@@ -16,7 +17,7 @@ import { ActivatedRoute } from '@angular/router';
 export class GameComponent implements OnInit {
   game: Game;
   gameId: string = '';
-
+  gameOver: boolean = false;
   items$: Observable<any[]>;
 
   private gamesCollection: CollectionReference<DocumentData>;
@@ -47,13 +48,13 @@ export class GameComponent implements OnInit {
       const docSnapshot = await getDoc(gameDocRef);
       if (docSnapshot.exists()) {
         const gameData: any = docSnapshot.data();
-        // Hier kannst du mit den Daten des abgerufenen Dokuments arbeiten
         this.game.currentPlayer = gameData.currentPlayer;
         this.game.playedCards = gameData.playedCards;
         this.game.players = gameData.players;
         this.game.stack = gameData.stack;
         this.game.pickCardAnimation = gameData.pickCardAnimation;
         this.game.currentCard = gameData.currentCard;
+        this.game.playerImages = gameData.playerImages;
       } else {
         console.log('Das Dokument existiert nicht.');
       }
@@ -67,18 +68,20 @@ export class GameComponent implements OnInit {
   }
 
   takeCard() {
-    if (!this.game.pickCardAnimation) {
-      this.game.currentCard = this.game.stack.pop() || '';
-      this.game.pickCardAnimation = true;
-      this.game.currentPlayer++;
-      this.game.currentPlayer = this.game.currentPlayer % this.game.players.length;
-      this.saveGame();
-      setTimeout(() => {
-        this.game.playedCards.push(this.game.currentCard);
-        this.game.pickCardAnimation = false;
+    if (this.game.stack.length == 0) {
+      this.gameOver = true;
+    } else if (!this.game.pickCardAnimation) {
+        this.game.currentCard = this.game.stack.pop() || '';
+        this.game.pickCardAnimation = true;
+        this.game.currentPlayer++;
+        this.game.currentPlayer = this.game.currentPlayer % this.game.players.length;
         this.saveGame();
-      }, 1000);
-    }
+        setTimeout(() => {
+          this.game.playedCards.push(this.game.currentCard);
+          this.game.pickCardAnimation = false;
+          this.saveGame();
+        }, 1000);
+      }
   }
 
   openDialog(): void {
@@ -87,6 +90,7 @@ export class GameComponent implements OnInit {
     dialogRef.afterClosed().subscribe((name: string) => {
       if (name && name.length > 0) {
         this.game.players.push(name);
+        this.game.playerImages.push('2.png');
         this.saveGame();
       }
     });
@@ -101,5 +105,22 @@ export class GameComponent implements OnInit {
       .catch((error) => {
         console.error("Fehler beim Aktualisieren des Spiels:", error);
       });
+  }
+
+  editPlayer(playerId: number) {
+    console.log('player:', playerId);
+    const dialogRef = this.dialog.open(EditPlayerComponent);
+    dialogRef.afterClosed().subscribe((change: string) => {
+      console.log('Recieved change:', change);
+      if (change) {
+        if (change == 'DELETE') {
+          this.game.players.splice(playerId, 1);
+          this.game.playerImages.splice(playerId, 1);
+        } else {
+          this.game.playerImages[playerId] = change;
+        }
+        this.saveGame();
+      }
+    });
   }
 }
